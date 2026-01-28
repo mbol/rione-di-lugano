@@ -1,15 +1,15 @@
 // CONFIGURATION
-const startDate = new Date('2026-02-02'); // YYYY-MM-DD
+const startDate = new Date('2026-01-27'); // YYYY-MM-DD
 
 // Now each rule can have its own time
 // { weekday: <0-6>, count: <number>, time: 'HH:MM' }
 const scheduleRules = [
-    { weekday: 1, count: 3, time: '19:00' }, // 3 Mondays at 19:00
-    { weekday: 3, count: 2, time: '18:30' }, // 2 Wednesdays at 18:30
+    { weekday: 1, count: 1, time: '19:00' }, // 3 Mondays at 19:00
+    { weekday: 3, count: 3, time: '19:00' }, // 2 Wednesdays at 18:30
     // Add more rules as needed
 ];
 
-const teacher = '?';
+const teacher = '';
 
 function getNextWeekday(date, weekday) {
     const result = new Date(date);
