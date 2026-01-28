@@ -16,7 +16,12 @@ button:hover { background:#1d4ed8; }
 </head>
 <body>
 <main>
-<h1>Iscrizione alla Lezione</h1>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1em;">
+  <h1 style="margin: 0;">Iscrizione alla Lezione</h1>
+  <button onclick="window.location.href='index.html'" style="padding: 0.7em 1.5em; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-size: 1em; cursor: pointer; font-weight: bold; transition: background 0.2s; margin-top: 0;">
+    ← Indietro
+  </button>
+</div>
 
 <div id="firebase-status" style="margin-bottom:1em; font-weight:bold;"></div>
 
@@ -29,6 +34,9 @@ button:hover { background:#1d4ed8; }
 
   <label for="lastname">Cognome</label>
   <input type="text" id="lastname" name="LastName" required>
+
+  <label for="birthyear">Anno di nascita</label>
+  <input type="number" id="birthyear" name="BirthYear" required min="1900" max="2026" placeholder="es. 2005">
 
   <label for="phone">Telefono</label>
   <input type="tel" id="phone" name="Phone" required
@@ -49,58 +57,35 @@ button:hover { background:#1d4ed8; }
 </main>
 
 <!-- Add Firebase SDKs -->
+<script src="firebase-config.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 <script>
-  // Firebase configuration constants
-  const FIREBASE_API_KEY = "AIzaSyC7u5MyVWVh8f_kSaE_q445jS5O5Qw0WPo";
-  const FIREBASE_AUTH_DOMAIN = "institute-b877c.firebaseapp.com";
-  const FIREBASE_PROJECT_ID = "institute-b877c";
-  const FIREBASE_STORAGE_BUCKET = "institute-b877c.appspot.com";
-  const FIREBASE_MESSAGING_SENDER_ID = "1035260652216";
-  const FIREBASE_APP_ID = "1:1035260652216:web:a275c0bfb35ef48627224d";
-  const FIREBASE_MEASUREMENT_ID = "G-98B5FH2ZEH";
-
-  const firebaseConfig = {
-    apiKey: FIREBASE_API_KEY,
-    authDomain: FIREBASE_AUTH_DOMAIN,
-    projectId: FIREBASE_PROJECT_ID,
-    storageBucket: FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: FIREBASE_MESSAGING_SENDER_ID,
-    appId: FIREBASE_APP_ID,
-    measurementId: FIREBASE_MEASUREMENT_ID
-  };
-
   firebase.initializeApp(firebaseConfig);
   const db = firebase.firestore();
 
   const form = document.getElementById('inscription-form');
   const preview = document.getElementById('inscription-preview');
   const previewContent = document.getElementById('preview-content');
-
-  // Check Firebase connection
   const statusDiv = document.getElementById('firebase-status');
-  db.collection("iscrizioni").limit(1).get()
-    .then(() => {
-      statusDiv.textContent = "✅ Connessione db riuscita.";
-      statusDiv.style.color = "#22c55e";
-    })
-    .catch((error) => {
-      statusDiv.textContent = "❌ Errore connessione db: " + error.message;
-      statusDiv.style.color = "#f87171";
-    });
+
+  // Remove the connection check that requires read permissions
+  statusDiv.textContent = "✅ Pronto per l'iscrizione.";
+  statusDiv.style.color = "#22c55e";
 
   form.addEventListener('submit', function(e) {
     e.preventDefault();
 
     const firstname = form.FirstName.value;
     const lastname = form.LastName.value;
+    const birthyear = form.BirthYear.value;
     const phone = form.Phone.value;
     const email = form.Email.value;
 
     previewContent.innerHTML = `
       <strong>Nome:</strong> ${firstname}<br>
       <strong>Cognome:</strong> ${lastname}<br>
+      <strong>Anno di nascita:</strong> ${birthyear}<br>
       <strong>Telefono:</strong> ${phone}<br>
       <strong>Email:</strong> ${email ? email : '-'}
     `;
@@ -109,6 +94,7 @@ button:hover { background:#1d4ed8; }
     db.collection("iscrizioni").add({
       FirstName: firstname,
       LastName: lastname,
+      BirthYear: birthyear,
       Phone: phone,
       Email: email
     })
@@ -116,7 +102,10 @@ button:hover { background:#1d4ed8; }
       statusDiv.textContent = "✅ Dati inviati correttamente al db!";
       statusDiv.style.color = "#22c55e";
       alert('Iscrizione inviata con successo!');
-      setTimeout(() => form.reset(), 500);
+      setTimeout(() => {
+        form.reset();
+        preview.style.display = 'none';
+      }, 500);
     })
     .catch((error) => {
       statusDiv.textContent = "❌ Errore nell'invio dei dati: " + error.message;
