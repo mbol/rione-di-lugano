@@ -22,8 +22,8 @@
       .admin-btn {
         background: #22c55e;
         border-radius: 8px;
-        font-size: clamp(1em, 2.5vw, 1.3em); /* Responsive font size */
-        padding: 1.3em 2.5em;
+        font-size: 1.1em;
+        padding: 1em 2em;
         box-shadow: 0 2px 8px rgba(34,197,94,0.15);
         transition: background 0.2s, transform 0.2s;
         border: none;
@@ -33,14 +33,12 @@
         margin-bottom: 0.5em;
         display: inline-block;
         min-width: 200px;
-        max-width: 240px;
-        width: auto;
         margin-left: 0;
+        width: auto;
+        max-width: none;
         text-align: center;
         box-sizing: border-box;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
       .admin-btn:hover {
         background: #16a34a;
@@ -83,16 +81,17 @@
       .register-btn {
         display: inline-block;
         margin-top: 1em;
-        padding: 1em 2em;
+        padding: 1.3em 2.5em;
         background: #2563eb;
         color: #fff;
         border: none;
         border-radius: 8px;
-        font-size: 1.1em;
+        font-size: 1.3em;
         cursor: pointer;
         transition: background 0.2s;
         text-decoration: none;
         font-weight: bold;
+        min-width: 200px;
       }
       .register-btn:hover {
         background: #1d4ed8;
@@ -103,7 +102,7 @@
     <header>
         <h1>Istituto</h1>
         <p>Corso primo semestre 2026.</p>
-        <a href="inscription.html" class="register-btn">Iscriversi</a>
+        <a href="inscription.html" class="register-btn">Iscrizione</a>
     </header>
     
     <main>
