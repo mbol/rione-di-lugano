@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizzatore PDF</title>
+    <link rel="stylesheet" href="../istituto/style.css">
+    <style>
+        body {
+            background: #181a1b;
+            color: #f3f3f3;
+        }
+            #pdf-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin: 0;
+                height: 100vh;
+                justify-content: flex-start;
+            }
+            #controls {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: rgba(24,26,27,0.95);
+                padding: 8px 0 0 0;
+                margin-top: 0;
+                box-shadow: none;
+            }
+        #pdf-canvas {
+            border: none;
+            background: transparent;
+            box-shadow: none;
+            border-radius: 0;
+            display: block;
+            margin: 0 auto;
+            max-width: 100vw;
+            max-height: 80vh;
+        }
+        #controls {
+            margin: 24px;
+        }
+        .viewer-btn {
+            padding: 0.7em 2em;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #fff;
+            background: #2563eb;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(37,99,235,0.2);
+            transition: background 0.2s, transform 0.2s;
+            cursor: pointer;
+            margin: 0 8px;
+        }
+        .viewer-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px) scale(1.03);
+        }
+        #page-info {
+            font-size: 1.1em;
+            color: #60a5fa;
+            margin: 0 12px;
+        }
+    </style>
+</head>
+<body>
+    <div id="pdf-container">
+            <canvas id="pdf-canvas"></canvas>
+            <div id="controls">
+                <button id="prev">Precedente</button>
+                <span id="page-info">Pagina 1</span>
+                <button id="next">Successiva</button>
+            </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
+    <script src="pdf-viewer.js"></script>
+</body>
+</html>
