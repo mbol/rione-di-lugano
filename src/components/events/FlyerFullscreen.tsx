@@ -34,11 +34,12 @@ const PdfFullscreen = dynamic(
 interface Props {
   events: Event[];
   initialIndex: number;
+  onClose?: () => void;
 }
 
 const THRESHOLD = 50;
 
-export function FlyerFullscreen({ events, initialIndex }: Props) {
+export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
   const [idx, setIdx] = useState(initialIndex);
   const [direction, setDirection] = useState(0);
   const [pdfPage, setPdfPage] = useState(1);
@@ -74,8 +75,9 @@ export function FlyerFullscreen({ events, initialIndex }: Props) {
   }, [idx, events.length, goTo]);
 
   const close = useCallback(() => {
+    if (onClose) { onClose(); return; }
     window.history.back();
-  }, []);
+  }, [onClose]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -23,6 +23,8 @@ const flyerIcons: Record<Event["flyerType"], React.ElementType> = {
 interface EventCardProps {
   event: Event;
   index: number;
+  linkHref?: string;
+  onOpen?: (event: Event) => void;
 }
 
 function renderWithLinks(text: string): React.ReactNode[] {
@@ -45,7 +47,7 @@ function renderWithLinks(text: string): React.ReactNode[] {
   );
 }
 
-export function EventCard({ event, index }: EventCardProps) {
+export function EventCard({ event, index, linkHref, onOpen }: EventCardProps) {
   const [showDesc, setShowDesc] = useState(false);
   const Icon = flyerIcons[event.flyerType];
   const day = formatDay(event.date);
@@ -62,7 +64,11 @@ export function EventCard({ event, index }: EventCardProps) {
         transition={{ duration: 0.5, delay: index * 0.08, ease: "easeOut" }}
       >
         <div className="relative group">
-          <Link href={`/events?id=${event.id}`} className="block">
+          <Link
+            href={linkHref ?? `/events?id=${event.id}`}
+            className="block"
+            onClick={onOpen ? (e) => { e.preventDefault(); onOpen(event); } : undefined}
+          >
             <div className="flex gap-5 p-5 sm:p-6 rounded-2xl border border-border bg-card group-hover:border-primary/30 group-hover:bg-card/80 transition-all duration-300">
               {/* Date badge */}
               <div className="flex-shrink-0 flex flex-col items-center justify-center w-14 sm:w-16 text-center select-none">

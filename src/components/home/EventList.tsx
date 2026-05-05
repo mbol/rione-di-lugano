@@ -25,17 +25,25 @@ function EventSkeleton() {
   );
 }
 
-export function EventList({ category }: { category: EventCategory }) {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loading, setLoading] = useState(true);
+interface EventListProps {
+  category: EventCategory;
+  events?: Event[];
+  getLinkHref?: (event: Event) => string | undefined;
+  onOpenEvent?: (event: Event) => void;
+}
+
+export function EventList({ category, events: propEvents, getLinkHref, onOpenEvent }: EventListProps) {
+  const [events, setEvents] = useState<Event[]>(propEvents ?? []);
+  const [loading, setLoading] = useState(!propEvents);
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (propEvents) return;
     getUpcomingEvents()
       .then((all) => setEvents(all.filter((e) => e.category === category)))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
-  }, [category]);
+  }, [category, propEvents]);
 
   if (loading) {
     return (
@@ -72,7 +80,15 @@ export function EventList({ category }: { category: EventCategory }) {
   return (
     <div className="space-y-4">
       {events.map((event, index) => (
-        <EventCard key={event.id} event={event} index={index} />
+        <EventCard
+            key={event.id}
+            event={event}
+            index={index}
+            linkHref={getLinkHref?.(event)}
+            onOpen={onOpenEvent && event.flyerType !== "none" && event.flyerUrl
+              ? () => onOpenEvent(event)
+              : undefined}
+          />
       ))}
     </div>
   );

@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import { Navbar } from "@/components/layout/Navbar";
-import { EventList } from "@/components/home/EventList";
+import { CategoryPageClient } from "@/components/events/CategoryPageClient";
 
 export const metadata = { title: "Sacramentale — Rione di Lugano" };
 
@@ -16,7 +17,9 @@ export default function SacramentalePage() {
           <p className="text-blue-200 mt-1 text-sm">Programmi e locandine della riunione sacramentale</p>
         </div>
         <main className="mx-auto max-w-3xl px-4 py-8">
-          <EventList category="sacramentale" />
+          <Suspense>
+            <CategoryPageClient category="sacramentale" />
+          </Suspense>
         </main>
         <footer className="border-t border-gray-200 py-8 px-6 text-center text-xs text-gray-400">
           © {new Date().getFullYear()} Rione di Lugano
