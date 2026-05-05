@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from "react";
 import { Timestamp } from "firebase/firestore";
-import { FileText, ImageIcon, Calendar, Upload, X, CheckCircle } from "lucide-react";
+import { FileText, ImageIcon, Calendar, Upload, X, CheckCircle, Star, Bell, LayoutList } from "lucide-react";
 import { toast } from "sonner";
 import { createEvent, updateEvent } from "@/lib/events";
 import { uploadFlyer, deleteFlyer } from "@/lib/storage";
@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { extractTextFromFlyer, parseOcrSuggestion, hasAnySuggestion, type OcrSuggestion } from "@/lib/ocr";
 import { OcrStatus, OcrSuggestions } from "./OcrSuggestions";
-import type { Event, FlyerType } from "@/lib/types";
+import type { Event, FlyerType, EventCategory } from "@/lib/types";
 
 interface Props {
   open: boolean;
@@ -58,6 +58,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
   const [dateStr, setDateStr] = useState("");
   const [timeStr, setTimeStr] = useState("19:00");
   const [flyerType, setFlyerType] = useState<FlyerType>("none");
+  const [category, setCategory] = useState<EventCategory>("generale");
   const [zoomUrl, setZoomUrl] = useState("");
   const [published, setPublished] = useState(false);
 
@@ -83,6 +84,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
         setDateStr(tpDate(event.date));
         setTimeStr(tpTime(event.date));
         setFlyerType(event.flyerType);
+        setCategory(event.category ?? "generale");
         setZoomUrl(event.zoomUrl ?? "");
         setPublished(event.published);
       } else {
@@ -93,6 +95,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
         setDateStr(tpDate(Timestamp.fromDate(today)));
         setTimeStr("19:00");
         setFlyerType("none");
+        setCategory("generale");
         setZoomUrl("");
         setPublished(false);
       }
@@ -195,6 +198,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
         flyerType,
         flyerUrl,
         flyerPath,
+        category,
         zoomUrl: zoomUrl.trim() || undefined,
         published,
       };
@@ -222,7 +226,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">
             {isEdit ? "Modifica Evento" : "Nuovo Evento"}
@@ -277,27 +281,54 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
             </div>
           </div>
 
-          <Separator className="opacity-40" />
+          {/* Category + Flyer type side by side */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Categoria</Label>
+              <div className="flex gap-1.5">
+                {(
+                  [
+                    { value: "generale", label: "Generale", icon: LayoutList },
+                    { value: "sacramentale", label: "Sacr.", icon: Star },
+                    { value: "annunci", label: "Annunci", icon: Bell },
+                  ] as { value: EventCategory; label: string; icon: React.ElementType }[]
+                ).map(({ value, label, icon: Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setCategory(value)}
+                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-[11px] font-medium transition-all ${
+                      category === value
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          {/* Flyer type */}
-          <div className="space-y-2">
-            <Label>Tipo di locandina</Label>
-            <div className="flex gap-2">
-              {flyerOptions.map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() => setFlyerType(value)}
-                  className={`flex-1 flex flex-col items-center gap-1 py-3 px-2 rounded-xl border text-xs font-medium transition-all ${
-                    flyerType === value
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border text-muted-foreground hover:border-muted-foreground"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </button>
-              ))}
+            <div className="space-y-2">
+              <Label>Tipo locandina</Label>
+              <div className="flex gap-1.5">
+                {flyerOptions.map(({ value, label, icon: Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFlyerType(value)}
+                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-[11px] font-medium transition-all ${
+                      flyerType === value
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:border-muted-foreground"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -399,31 +430,29 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
             />
           </div>
 
-          {/* Zoom URL */}
-          <div className="space-y-1.5">
-            <Label htmlFor="ef-zoom">Link Zoom (opzionale)</Label>
-            <Input
-              id="ef-zoom"
-              type="url"
-              value={zoomUrl}
-              onChange={(e) => setZoomUrl(e.target.value)}
-              placeholder="https://zoom.us/j/..."
-            />
-          </div>
-
-          {/* Published toggle */}
-          <div className="flex items-center justify-between py-1">
-            <div>
-              <p className="text-sm font-medium text-foreground">Pubblicato</p>
-              <p className="text-xs text-muted-foreground">
-                Visibile sul sito pubblico
-              </p>
+          {/* Zoom URL + Published side by side */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+            <div className="space-y-1.5">
+              <Label htmlFor="ef-zoom">Link Zoom (opzionale)</Label>
+              <Input
+                id="ef-zoom"
+                type="url"
+                value={zoomUrl}
+                onChange={(e) => setZoomUrl(e.target.value)}
+                placeholder="https://zoom.us/j/..."
+              />
             </div>
-            <Switch
-              checked={published}
-              onCheckedChange={setPublished}
-              aria-label="Pubblicato"
-            />
+            <div className="flex items-center justify-between p-3 rounded-xl border border-border">
+              <div>
+                <p className="text-sm font-medium text-foreground">Pubblicato</p>
+                <p className="text-xs text-muted-foreground">Visibile sul sito</p>
+              </div>
+              <Switch
+                checked={published}
+                onCheckedChange={setPublished}
+                aria-label="Pubblicato"
+              />
+            </div>
           </div>
 
           {/* Actions */}

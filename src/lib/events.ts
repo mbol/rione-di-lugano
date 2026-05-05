@@ -16,7 +16,7 @@ import { db } from "./firebase";
 import type { Event, EventInput } from "./types";
 
 function toEvent(id: string, data: Record<string, unknown>): Event {
-  return { id, ...data } as Event;
+  return { category: "generale", ...data, id } as Event;
 }
 
 function stripUndefined<T extends object>(obj: T): Partial<T> {

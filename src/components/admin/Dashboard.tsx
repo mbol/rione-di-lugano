@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, LogOut, Globe, Calendar, FileText, ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Globe, Calendar, FileText, ImageIcon, Star, Bell, LayoutList } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { auth } from "@/lib/firebase";
@@ -31,6 +31,8 @@ import type { Event } from "@/lib/types";
 
 const typeIcon = { pdf: FileText, image: ImageIcon, none: Calendar };
 const typeLabel = { pdf: "PDF", image: "Immagine", none: "Testo" };
+const categoryIcon = { sacramentale: Star, annunci: Bell, generale: LayoutList };
+const categoryLabel = { sacramentale: "Sacr.", annunci: "Annunci", generale: "Generale" };
 
 export function Dashboard() {
   const [events, setEvents] = useState<Event[]>([]);
@@ -172,7 +174,8 @@ export function Dashboard() {
                   <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-muted-foreground font-medium">Data</th>
                   <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-muted-foreground font-medium">Titolo</th>
                   <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-muted-foreground font-medium hidden sm:table-cell">Tipo</th>
-                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-muted-foreground font-medium hidden md:table-cell">Stato</th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-muted-foreground font-medium hidden md:table-cell">Categoria</th>
+                  <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-muted-foreground font-medium hidden lg:table-cell">Stato</th>
                   <th className="px-4 py-3 text-right text-xs uppercase tracking-wider text-muted-foreground font-medium">Azioni</th>
                 </tr>
               </thead>
@@ -205,6 +208,18 @@ export function Dashboard() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
+                        {(() => {
+                          const cat = event.category ?? "generale";
+                          const CatIcon = categoryIcon[cat];
+                          return (
+                            <Badge variant="outline" className="gap-1 text-xs">
+                              <CatIcon className="w-3 h-3" />
+                              {categoryLabel[cat]}
+                            </Badge>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-3 hidden lg:table-cell">
                         <Badge
                           variant="outline"
                           className={`text-xs ${event.published ? "border-green-500/40 text-green-400 bg-green-500/10" : "border-muted-foreground/30 text-muted-foreground"}`}

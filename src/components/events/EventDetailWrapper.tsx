@@ -1,29 +1,46 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { EventDetailClient } from "./EventDetailClient";
-import Link from "next/link";
-import { ArrowLeft, Calendar } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
+import { getUpcomingEvents, getEventById } from "@/lib/events";
+import { FlyerFullscreen } from "./FlyerFullscreen";
+import type { Event } from "@/lib/types";
 
 export function EventDetailWrapper() {
-  const searchParams = useSearchParams();
-  const id = searchParams.get("id");
+  const params = useSearchParams();
+  const id = params.get("id") ?? "";
+  const [events, setEvents] = useState<Event[]>([]);
+  const [initialIdx, setInitialIdx] = useState(0);
+  const [ready, setReady] = useState(false);
 
-  if (!id) {
-    return (
-      <main className="mx-auto max-w-3xl px-6 pt-24 pb-20 flex flex-col items-center gap-6 text-center">
-        <Calendar className="w-12 h-12 text-muted-foreground/30 mt-12" />
-        <h1 className="font-heading text-2xl text-foreground">Evento non trovato</h1>
-        <p className="text-muted-foreground">Nessun evento specificato.</p>
-        <Link href="/#agenda" className={cn(buttonVariants(), "gap-2")}>
-          <ArrowLeft className="w-4 h-4" />
-          Torna all&apos;agenda
-        </Link>
-      </main>
-    );
-  }
+  useEffect(() => {
+    if (!id) { window.location.href = "/#agenda"; return; }
 
-  return <EventDetailClient id={id} />;
+    Promise.all([getUpcomingEvents(), getEventById(id)])
+      .then(([upcoming, current]) => {
+        if (!current) { window.location.href = "/#agenda"; return; }
+
+        const flyerEvents = upcoming.filter(
+          (e) => e.flyerType !== "none" && e.flyerUrl
+        );
+        const idx = flyerEvents.findIndex((e) => e.id === id);
+
+        if (idx >= 0) {
+          setEvents(flyerEvents);
+          setInitialIdx(idx);
+        } else if (current.flyerType !== "none" && current.flyerUrl) {
+          setEvents([current]);
+          setInitialIdx(0);
+        } else {
+          window.location.href = "/#agenda";
+          return;
+        }
+        setReady(true);
+      })
+      .catch(() => { window.location.href = "/#agenda"; });
+  }, [id]);
+
+  if (!ready) return <div className="fixed inset-0 bg-black" />;
+
+  return <FlyerFullscreen events={events} initialIndex={initialIdx} />;
 }

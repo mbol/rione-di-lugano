@@ -1,6 +1,7 @@
 import type { Timestamp } from "firebase/firestore";
 
 export type FlyerType = "pdf" | "image" | "none";
+export type EventCategory = "sacramentale" | "annunci" | "generale";
 
 export interface Event {
   id: string;
@@ -12,6 +13,7 @@ export interface Event {
   flyerUrl?: string;
   flyerPath?: string;
   zoomUrl?: string;
+  category: EventCategory;
   published: boolean;
   createdAt: Timestamp;
   updatedAt: Timestamp;
