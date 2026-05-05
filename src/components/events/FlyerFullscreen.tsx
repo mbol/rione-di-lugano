@@ -229,16 +229,29 @@ export function FlyerFullscreen({ events, initialIndex }: Props) {
 
       {/* Download */}
       {event.flyerUrl && (
-        <a
-          href={event.flyerUrl}
-          download={event.title}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          onClick={async () => {
+            const url = event.flyerUrl!;
+            const ext = url.split("?")[0].split(".").pop() ?? (event.flyerType === "pdf" ? "pdf" : "jpg");
+            const filename = `${event.title}.${ext}`;
+            try {
+              const res = await fetch(url);
+              const blob = await res.blob();
+              const blobUrl = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = blobUrl;
+              a.download = filename;
+              a.click();
+              URL.revokeObjectURL(blobUrl);
+            } catch {
+              window.open(url, "_blank");
+            }
+          }}
           aria-label="Scarica locandina"
           className="absolute bottom-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
         >
           <Download className="w-5 h-5" />
-        </a>
+        </button>
       )}
 
       {/* PDF page counter with prev/next */}
