@@ -31,11 +31,20 @@ export const metadata: Metadata = {
     siteName: "Rione di Lugano",
     title: "Rione di Lugano",
     description: "Sito ufficiale del Rione di Lugano — eventi e appuntamenti della comunità.",
+    images: [
+      {
+        url: "https://rionelugano.com/icon-512.png",
+        width: 512,
+        height: 512,
+        alt: "Rione di Lugano",
+      },
+    ],
   },
   twitter: {
     card: "summary",
     title: "Rione di Lugano",
     description: "Sito ufficiale del Rione di Lugano — eventi e appuntamenti della comunità.",
+    images: ["https://rionelugano.com/icon-512.png"],
   },
   robots: {
     index: true,
@@ -50,8 +59,8 @@ export const metadata: Metadata = {
   icons: {
     apple: "/apple-touch-icon.png",
     icon: [
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png?v=2", sizes: "512x512", type: "image/png" },
     ],
   },
 };
