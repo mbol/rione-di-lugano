@@ -1,0 +1,26 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Flyers: organised under flyers/{year}/{month}/{filename}
+    match /flyers/{year}/{month}/{filename} {
+      // Anyone can download flyers (needed to render PDFs/images publicly)
+      allow read: if true;
+
+      // Only authenticated admins can upload; enforce size and MIME type
+      allow create, update: if request.auth != null
+        && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches(
+             '(application/pdf|image/(jpeg|png|webp))'
+           );
+
+      // Only authenticated admins can delete
+      allow delete: if request.auth != null;
+    }
+
+    // Deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,13 @@
+[
+  {
+    "origin": ["https://rionelugano.com", "https://rione-lugano.web.app", "http://localhost:3000"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "x-goog-resumable"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]
