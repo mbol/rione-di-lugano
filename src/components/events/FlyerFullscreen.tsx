@@ -1,10 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Info, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
 import type { Event } from "@/lib/types";
+
+function renderWithLinks(text: string): React.ReactNode[] {
+  const parts = text.split(/(https?:\/\/[^\s<>"']+)/g);
+  return parts.map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-300 underline underline-offset-2 hover:text-blue-200 break-all"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {part}
+      </a>
+    ) : (
+      part
+    )
+  );
+}
 
 const PdfFullscreen = dynamic(
   () => import("./PdfFullscreen").then((m) => ({ default: m.PdfFullscreen })),
@@ -23,6 +43,7 @@ export function FlyerFullscreen({ events, initialIndex }: Props) {
   const [direction, setDirection] = useState(0);
   const [pdfPage, setPdfPage] = useState(1);
   const [pdfNumPages, setPdfNumPages] = useState(0);
+  const [showDesc, setShowDesc] = useState(false);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   const event = events[idx];
@@ -30,6 +51,7 @@ export function FlyerFullscreen({ events, initialIndex }: Props) {
   useEffect(() => {
     setPdfPage(1);
     setPdfNumPages(0);
+    setShowDesc(false);
     const url = new URL(window.location.href);
     url.searchParams.set("id", event.id);
     window.history.replaceState(null, "", url.toString());
@@ -52,7 +74,7 @@ export function FlyerFullscreen({ events, initialIndex }: Props) {
   }, [idx, events.length, goTo]);
 
   const close = useCallback(() => {
-    window.location.href = "/#agenda";
+    window.history.back();
   }, []);
 
   useEffect(() => {
@@ -89,6 +111,17 @@ export function FlyerFullscreen({ events, initialIndex }: Props) {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
+      {/* Info (top-left, mirrors Close) */}
+      {event.detailedText?.trim() && (
+        <button
+          onClick={() => setShowDesc((v) => !v)}
+          aria-label="Informazioni aggiuntive"
+          className="absolute top-4 left-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+        >
+          <Info className="w-5 h-5" />
+        </button>
+      )}
+
       {/* Close */}
       <button
         onClick={close}
@@ -97,6 +130,49 @@ export function FlyerFullscreen({ events, initialIndex }: Props) {
       >
         <X className="w-5 h-5" />
       </button>
+
+      {/* Description overlay */}
+      <AnimatePresence>
+        {showDesc && (
+          <motion.div
+            key="desc-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 z-30 flex items-center justify-center p-6"
+            style={{ background: "rgba(0,0,0,0.75)" }}
+            onClick={() => setShowDesc(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full max-h-[70vh] overflow-y-auto p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => setShowDesc(false)}
+                aria-label="Chiudi"
+                className="absolute top-4 right-4 flex items-center justify-center w-8 h-8 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="pr-8 mb-4 space-y-0.5">
+                <h2 className="font-heading text-lg text-white leading-snug">
+                  {event.title}
+                </h2>
+              </div>
+
+              <div className="text-sm leading-relaxed whitespace-pre-wrap text-white/80">
+                {renderWithLinks(event.detailedText!)}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Prev */}
       {idx > 0 && (
@@ -150,6 +226,20 @@ export function FlyerFullscreen({ events, initialIndex }: Props) {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Download */}
+      {event.flyerUrl && (
+        <a
+          href={event.flyerUrl}
+          download={event.title}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Scarica locandina"
+          className="absolute bottom-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+        >
+          <Download className="w-5 h-5" />
+        </a>
+      )}
 
       {/* PDF page counter with prev/next */}
       {event.flyerType === "pdf" && pdfNumPages > 1 && (

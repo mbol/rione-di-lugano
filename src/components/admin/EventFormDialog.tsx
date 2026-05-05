@@ -226,7 +226,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">
             {isEdit ? "Modifica Evento" : "Nuovo Evento"}
@@ -431,17 +431,19 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
           </div>
 
           {/* Zoom URL + Published side by side */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
-            <div className="space-y-1.5">
-              <Label htmlFor="ef-zoom">Link Zoom (opzionale)</Label>
-              <Input
-                id="ef-zoom"
-                type="url"
-                value={zoomUrl}
-                onChange={(e) => setZoomUrl(e.target.value)}
-                placeholder="https://zoom.us/j/..."
-              />
-            </div>
+          <div className={`grid grid-cols-1 gap-4 items-end ${isEdit ? "sm:grid-cols-2" : ""}`}>
+            {isEdit && (
+              <div className="space-y-1.5">
+                <Label htmlFor="ef-zoom">Link Zoom (opzionale)</Label>
+                <Input
+                  id="ef-zoom"
+                  type="url"
+                  value={zoomUrl}
+                  onChange={(e) => setZoomUrl(e.target.value)}
+                  placeholder="https://zoom.us/j/..."
+                />
+              </div>
+            )}
             <div className="flex items-center justify-between p-3 rounded-xl border border-border">
               <div>
                 <p className="text-sm font-medium text-foreground">Pubblicato</p>
