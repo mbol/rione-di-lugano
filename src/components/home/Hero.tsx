@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
-import { Video } from "lucide-react";
+import { Video, MapPin } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 
 export function Hero() {
@@ -46,10 +47,28 @@ export function Hero() {
             href="https://maps.app.goo.gl/XTyWiNNwmzYPuHmW6"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-blue-600 transition-colors"
+            className="inline-flex items-center gap-1.5 hover:text-blue-600 transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+            title="Apri su Google Maps"
           >
+            <MapPin className="w-4 h-4 text-blue-500" aria-hidden="true" />
             Via alla Bozzoreda 27 · 6963 Pregassona
           </a>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.27 }}
+          className="w-full rounded-xl overflow-hidden shadow-sm border border-blue-100"
+        >
+          <Image
+            src="/hero-picture.jpeg"
+            alt="Rione di Lugano"
+            width={900}
+            height={550}
+            className="w-full h-auto object-cover"
+            priority
+          />
         </motion.div>
 
         <motion.div

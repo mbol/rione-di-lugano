@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
-import { getUpcomingEvents } from "@/lib/events";
+import { getCategoryEvents } from "@/lib/events";
 import { EventList } from "@/components/home/EventList";
 import { FlyerFullscreen } from "./FlyerFullscreen";
 import type { Event, EventCategory } from "@/lib/types";
@@ -22,8 +22,8 @@ export function CategoryPageClient({ category }: Props) {
   const [showList, setShowList] = useState(false);
 
   useEffect(() => {
-    getUpcomingEvents()
-      .then((all) => setEvents(all.filter((e) => e.category === category)))
+    getCategoryEvents(category)
+      .then(setEvents)
       .catch(() => {})
       .finally(() => setReady(true));
   }, [category]);

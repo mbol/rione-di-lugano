@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CalendarX } from "lucide-react";
 import { EventCard } from "./EventCard";
-import { getUpcomingEvents } from "@/lib/events";
+import { getCategoryEvents } from "@/lib/events";
 import type { Event, EventCategory } from "@/lib/types";
 
 function EventSkeleton() {
@@ -39,8 +39,8 @@ export function EventList({ category, events: propEvents, getLinkHref, onOpenEve
 
   useEffect(() => {
     if (propEvents) return;
-    getUpcomingEvents()
-      .then((all) => setEvents(all.filter((e) => e.category === category)))
+    getCategoryEvents(category)
+      .then(setEvents)
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [category, propEvents]);

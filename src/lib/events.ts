@@ -25,19 +25,69 @@ function stripUndefined<T extends object>(obj: T): Partial<T> {
   ) as Partial<T>;
 }
 
+function startOfToday() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return today;
+}
+
+function hasFlyer(event: Event) {
+  return event.flyerType !== "none" && !!event.flyerUrl;
+}
+
+function sortForCategoryPage(events: Event[]): Event[] {
+  const today = startOfToday().getTime();
+
+  return [...events].sort((a, b) => {
+    const aTime = a.date.toDate().getTime();
+    const bTime = b.date.toDate().getTime();
+    const aUpcoming = aTime >= today;
+    const bUpcoming = bTime >= today;
+
+    if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;
+    return aUpcoming ? aTime - bTime : bTime - aTime;
+  });
+}
+
 export async function getUpcomingEvents(): Promise<Event[]> {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  const today = startOfToday();
 
   const q = query(
     collection(db, "events"),
     where("published", "==", true),
-    where("date", ">=", Timestamp.fromDate(startOfToday)),
+    where("date", ">=", Timestamp.fromDate(today)),
     orderBy("date", "asc")
   );
 
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => toEvent(d.id, d.data()));
+}
+
+export async function getPublishedEvents(): Promise<Event[]> {
+  const q = query(
+    collection(db, "events"),
+    where("published", "==", true),
+    orderBy("date", "asc")
+  );
+
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => toEvent(d.id, d.data()));
+}
+
+export async function getCategoryEvents(category: Event["category"]): Promise<Event[]> {
+  const today = startOfToday().getTime();
+  const events = await getPublishedEvents();
+
+  return sortForCategoryPage(
+    events.filter((event) => {
+      if (event.category !== category) return false;
+
+      const isTodayOrFuture = event.date.toDate().getTime() >= today;
+      if (isTodayOrFuture) return true;
+
+      return category === "sacramentale" && hasFlyer(event);
+    })
+  );
 }
 
 export async function getAllEvents(): Promise<Event[]> {

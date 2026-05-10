@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ChangeEvent, type DragEvent } from "react";
 import { Timestamp } from "firebase/firestore";
-import { FileText, ImageIcon, Calendar, Upload, X, CheckCircle, Star, Bell, LayoutList } from "lucide-react";
+import { Upload, X, CheckCircle, Star, Bell, LayoutList } from "lucide-react";
 import { toast } from "sonner";
 import { createEvent, updateEvent } from "@/lib/events";
 import { uploadFlyer, deleteFlyer } from "@/lib/storage";
@@ -39,13 +39,22 @@ function tpTime(ts: Timestamp) {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const flyerOptions: { value: FlyerType; label: string; icon: React.ElementType }[] = [
-  { value: "none", label: "Solo testo", icon: Calendar },
-  { value: "pdf", label: "PDF", icon: FileText },
-  { value: "image", label: "Immagine", icon: ImageIcon },
-];
+const ACCEPTED_FLYERS = "application/pdf,image/jpeg,image/png,image/webp";
 
-const ACCEPTED = { pdf: "application/pdf", image: "image/jpeg,image/png,image/webp" };
+function detectFlyerType(file: File): Exclude<FlyerType, "none"> | null {
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  if (file.type === "application/pdf" || extension === "pdf") return "pdf";
+  if (
+    file.type.startsWith("image/") ||
+    extension === "jpg" ||
+    extension === "jpeg" ||
+    extension === "png" ||
+    extension === "webp"
+  ) {
+    return "image";
+  }
+  return null;
+}
 
 export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
   const isEdit = !!event;
@@ -57,7 +66,6 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
   const [detailedText, setDetailedText] = useState("");
   const [dateStr, setDateStr] = useState("");
   const [timeStr, setTimeStr] = useState("19:00");
-  const [flyerType, setFlyerType] = useState<FlyerType>("none");
   const [category, setCategory] = useState<EventCategory>("generale");
   const [zoomUrl, setZoomUrl] = useState("");
   const [published, setPublished] = useState(false);
@@ -65,6 +73,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
   // File upload state
   const [newFile, setNewFile] = useState<File | null>(null);
   const [removeExisting, setRemoveExisting] = useState(false);
+  const [draggingFlyer, setDraggingFlyer] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -83,7 +92,6 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
         setDetailedText(event.detailedText ?? "");
         setDateStr(tpDate(event.date));
         setTimeStr(tpTime(event.date));
-        setFlyerType(event.flyerType);
         setCategory(event.category ?? "generale");
         setZoomUrl(event.zoomUrl ?? "");
         setPublished(event.published);
@@ -94,7 +102,6 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
         setDetailedText("");
         setDateStr(tpDate(Timestamp.fromDate(today)));
         setTimeStr("19:00");
-        setFlyerType("none");
         setCategory("generale");
         setZoomUrl("");
         setPublished(false);
@@ -107,22 +114,36 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
     }
   }, [open, event]);
 
-  // When flyerType changes to "none", clear any file selection
-  useEffect(() => {
-    if (flyerType === "none") {
+  function selectFlyerFile(file: File | null) {
+    setOcrSuggestion(null);
+
+    if (!file) {
+      setNewFile(null);
+      return;
+    }
+
+    const detectedType = detectFlyerType(file);
+    if (!detectedType) {
+      toast.error("Formato locandina non supportato. Usa PDF, JPG, PNG o WebP.");
       setNewFile(null);
       if (fileRef.current) fileRef.current.value = "";
+      return;
     }
-  }, [flyerType]);
+
+    setNewFile(file);
+    setRemoveExisting(false);
+    runOcr(file);
+  }
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0] ?? null;
-    setNewFile(file);
-    setOcrSuggestion(null);
-    if (file) {
-      setRemoveExisting(false);
-      runOcr(file);
-    }
+    selectFlyerFile(e.target.files?.[0] ?? null);
+  }
+
+  function handleFlyerDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingFlyer(false);
+    selectFlyerFile(e.dataTransfer.files?.[0] ?? null);
   }
 
   async function runOcr(file: File) {
@@ -147,7 +168,6 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
     if (!ocrSuggestion) return;
     if (ocrSuggestion.date) setDateStr(ocrSuggestion.date);
     if (ocrSuggestion.time) setTimeStr(ocrSuggestion.time);
-    if (ocrSuggestion.title && !title) setTitle(ocrSuggestion.title);
     setOcrSuggestion(null);
   }
 
@@ -163,6 +183,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
     try {
       let flyerUrl: string | undefined = isEdit ? event?.flyerUrl : undefined;
       let flyerPath: string | undefined = isEdit ? event?.flyerPath : undefined;
+      let nextFlyerType: FlyerType = isEdit && !removeExisting ? event?.flyerType ?? "none" : "none";
 
       // Delete old flyer if replacing or explicitly removing
       if ((removeExisting || newFile) && isEdit && event?.flyerPath) {
@@ -172,17 +193,19 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
       }
 
       // Upload new file
-      if (newFile && flyerType !== "none") {
+      if (newFile) {
+        const detectedType = detectFlyerType(newFile);
+        if (!detectedType) {
+          toast.error("Formato locandina non supportato. Usa PDF, JPG, PNG o WebP.");
+          return;
+        }
         setUploadProgress(0);
         const result = await uploadFlyer(newFile, setUploadProgress);
         flyerUrl = result.url;
         flyerPath = result.path;
-      }
-
-      // Clear flyer fields if type is none
-      if (flyerType === "none") {
-        flyerUrl = undefined;
-        flyerPath = undefined;
+        nextFlyerType = detectedType;
+      } else if (removeExisting) {
+        nextFlyerType = "none";
       }
 
       // Build Timestamp
@@ -195,7 +218,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
         description: description.trim(),
         detailedText: detailedText.trim() || undefined,
         date,
-        flyerType,
+        flyerType: nextFlyerType,
         flyerUrl,
         flyerPath,
         category,
@@ -226,7 +249,7 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="w-[95vw] max-w-5xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-none sm:w-[95vw] sm:max-w-6xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">
             {isEdit ? "Modifica Evento" : "Nuovo Evento"}
@@ -281,67 +304,51 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
             </div>
           </div>
 
-          {/* Category + Flyer type side by side */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Categoria</Label>
-              <div className="flex gap-1.5">
-                {(
-                  [
-                    { value: "generale", label: "Generale", icon: LayoutList },
-                    { value: "sacramentale", label: "Sacr.", icon: Star },
-                    { value: "annunci", label: "Annunci", icon: Bell },
-                  ] as { value: EventCategory; label: string; icon: React.ElementType }[]
-                ).map(({ value, label, icon: Icon }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setCategory(value)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-[11px] font-medium transition-all ${
-                      category === value
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:border-muted-foreground"
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Tipo locandina</Label>
-              <div className="flex gap-1.5">
-                {flyerOptions.map(({ value, label, icon: Icon }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setFlyerType(value)}
-                    className={`flex-1 flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-[11px] font-medium transition-all ${
-                      flyerType === value
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border text-muted-foreground hover:border-muted-foreground"
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+          {/* Category */}
+          <div className="space-y-2">
+            <Label>Categoria</Label>
+            <div className="flex gap-1.5">
+              {(
+                [
+                  { value: "generale", label: "Generale", icon: LayoutList },
+                  { value: "sacramentale", label: "Sacr.", icon: Star },
+                  { value: "annunci", label: "Annunci", icon: Bell },
+                ] as { value: EventCategory; label: string; icon: React.ElementType }[]
+              ).map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setCategory(value)}
+                  className={`flex-1 min-w-0 flex flex-col items-center gap-1 py-2.5 px-1 rounded-xl border text-[11px] font-medium whitespace-nowrap transition-all ${
+                    category === value
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border text-muted-foreground hover:border-muted-foreground"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* File upload (pdf / image) */}
-          {flyerType !== "none" && (
-            <div className="space-y-2">
-              <Label>File locandina</Label>
+          {/* File upload */}
+          <div className="space-y-2">
+            <Label>File locandina</Label>
 
               {/* Existing flyer indicator */}
               {hasExistingFlyer && (
                 <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-muted/30 text-sm">
                   <CheckCircle className="w-4 h-4 text-primary flex-shrink-0" />
                   <span className="flex-1 text-foreground truncate">Locandina già caricata</span>
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 transition-colors whitespace-nowrap"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Sostituisci
+                  </button>
                   <button
                     type="button"
                     onClick={() => setRemoveExisting(true)}
@@ -356,8 +363,31 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
               {/* File input */}
               {!hasExistingFlyer && (
                 <div
-                  className="flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed border-border hover:border-primary/40 transition-colors cursor-pointer"
+                  className={`flex flex-col items-center gap-2 p-6 rounded-xl border-2 border-dashed transition-colors cursor-pointer ${
+                    draggingFlyer
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-primary/40"
+                  }`}
                   onClick={() => fileRef.current?.click()}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDraggingFlyer(true);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.dataTransfer.dropEffect = "copy";
+                    setDraggingFlyer(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                      setDraggingFlyer(false);
+                    }
+                  }}
+                  onDrop={handleFlyerDrop}
                 >
                   <Upload className="w-6 h-6 text-muted-foreground" />
                   {newFile ? (
@@ -370,22 +400,23 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
                   ) : (
                     <div className="text-center">
                       <p className="text-sm text-muted-foreground">
-                        Clicca per selezionare
+                        Clicca o trascina qui la locandina
                       </p>
                       <p className="text-xs text-muted-foreground/60 mt-0.5">
-                        {flyerType === "pdf" ? "PDF" : "JPG, PNG, WebP"} — max 10 MB
+                        PDF, JPG, PNG o WebP - max 10 MB
                       </p>
                     </div>
                   )}
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept={ACCEPTED[flyerType]}
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
                 </div>
               )}
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept={ACCEPTED_FLYERS}
+                onChange={handleFileChange}
+                className="hidden"
+              />
 
               {/* Upload progress */}
               {uploadProgress !== null && (
@@ -408,13 +439,11 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
                   suggestion={ocrSuggestion}
                   onApplyDate={(d) => { setDateStr(d); setOcrSuggestion((s) => s ? { ...s, date: undefined } : null); }}
                   onApplyTime={(t) => { setTimeStr(t); setOcrSuggestion((s) => s ? { ...s, time: undefined } : null); }}
-                  onApplyTitle={(t) => { setTitle(t); setOcrSuggestion((s) => s ? { ...s, title: undefined } : null); }}
                   onApplyAll={applyOcrAll}
                   onDismiss={() => setOcrSuggestion(null)}
                 />
               )}
             </div>
-          )}
 
           <Separator className="opacity-40" />
 
@@ -458,17 +487,17 @@ export function EventFormDialog({ open, onClose, onSaved, event }: Props) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-nowrap gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={saving}
-              className="flex-1"
+              className="flex-1 whitespace-nowrap"
             >
               Annulla
             </Button>
-            <Button type="submit" disabled={saving} className="flex-1">
+            <Button type="submit" disabled={saving} className="flex-1 whitespace-nowrap">
               {saving
                 ? uploadProgress !== null
                   ? "Caricamento…"

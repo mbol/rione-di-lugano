@@ -1,7 +1,6 @@
 export interface OcrSuggestion {
-  date?: string;  // "YYYY-MM-DD"
-  time?: string;  // "HH:MM"
-  title?: string;
+  date?: string; // "YYYY-MM-DD"
+  time?: string; // "HH:MM"
 }
 
 const MONTHS_IT: Record<string, number> = {
@@ -36,12 +35,12 @@ export async function extractTextFromFlyer(
 ): Promise<string> {
   let source: HTMLCanvasElement | File = file;
 
-  if (file.type === "application/pdf") {
-    onProgress?.("Elaborazione PDF…", 10);
+  if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+    onProgress?.("Elaborazione PDF...", 10);
     source = await renderPdfFirstPage(file);
   }
 
-  onProgress?.("Caricamento motore OCR…", 20);
+  onProgress?.("Caricamento motore OCR...", 20);
 
   const { createWorker } = await import("tesseract.js");
 
@@ -49,9 +48,9 @@ export async function extractTextFromFlyer(
     langPath: "https://tessdata.projectnaptha.com/4.0.0",
     logger: (m: { status: string; progress: number }) => {
       if (m.status === "recognizing text") {
-        onProgress?.("Riconoscimento testo…", 40 + Math.round(m.progress * 55));
+        onProgress?.("Riconoscimento testo...", 40 + Math.round(m.progress * 55));
       } else if (m.status === "loading language traineddata") {
-        onProgress?.("Caricamento dizionario…", 25 + Math.round(m.progress * 10));
+        onProgress?.("Caricamento dizionario...", 25 + Math.round(m.progress * 10));
       }
     },
   });
@@ -68,7 +67,6 @@ export function parseOcrSuggestion(text: string): OcrSuggestion {
   const lc = text.toLowerCase();
   const result: OcrSuggestion = {};
 
-  // DATE — long Italian form: "15 gennaio 2025"
   const longDateRe =
     /\b(\d{1,2})\s+(gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre)\s+(\d{4})\b/;
   const longDate = lc.match(longDateRe);
@@ -77,50 +75,27 @@ export function parseOcrSuggestion(text: string): OcrSuggestion {
     const m = String(MONTHS_IT[longDate[2]]).padStart(2, "0");
     result.date = `${longDate[3]}-${m}-${d}`;
   } else {
-    // DATE — short form: "15/01/2025", "15.01.2025", "15-01-2025"
     const shortDate = text.match(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})\b/);
     if (shortDate) {
       result.date = `${shortDate[3]}-${shortDate[2].padStart(2, "0")}-${shortDate[1].padStart(2, "0")}`;
     }
   }
 
-  // TIME — "ore 19:00", "h. 19.00", "alle 19:30", or standalone "19:00"
-  const timePrefix = lc.match(/(?:ore|h\.?\s*|alle\s+)(\d{1,2})[:.](\d{2})/);
-  if (timePrefix) {
-    result.time = `${timePrefix[1].padStart(2, "0")}:${timePrefix[2]}`;
-  } else {
-    const standalone = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
-    if (standalone) {
-      result.time = `${standalone[1].padStart(2, "0")}:${standalone[2]}`;
-    }
-  }
-
-  // TITLE — prefer first ALL-CAPS line (common in Italian flyers)
-  const SKIP = new Set(["DATA", "ORA", "ORARIO", "DOVE", "QUANDO", "INFO"]);
-  const lines = text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.length > 4 && l.length < 90);
-
-  const capsLine = lines.find(
-    (l) =>
-      l === l.toUpperCase() &&
-      /[A-ZÀÈÉÌÒÙ]{4,}/.test(l) &&
-      !/^\d/.test(l) &&
-      !SKIP.has(l.toUpperCase())
+  const prefixedTime = lc.match(
+    /(?:ore|h\.?\s*|alle\s+)([01]?\d|2[0-3])(?:\s*[:.,h]\s*([0-5]\d))?/
   );
-  if (capsLine) {
-    result.title = capsLine;
+  if (prefixedTime) {
+    result.time = `${prefixedTime[1].padStart(2, "0")}:${prefixedTime[2] ?? "00"}`;
   } else {
-    const first = lines.find(
-      (l) => l.length > 8 && !/^\d/.test(l) && !SKIP.has(l.toUpperCase())
-    );
-    if (first) result.title = first.substring(0, 80);
+    const standaloneTime = text.match(/\b([01]?\d|2[0-3])\s*[:.,h]\s*([0-5]\d)\b/i);
+    if (standaloneTime) {
+      result.time = `${standaloneTime[1].padStart(2, "0")}:${standaloneTime[2]}`;
+    }
   }
 
   return result;
 }
 
 export function hasAnySuggestion(s: OcrSuggestion): boolean {
-  return !!(s.date || s.time || s.title);
+  return !!(s.date || s.time);
 }

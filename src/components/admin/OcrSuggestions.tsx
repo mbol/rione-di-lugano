@@ -56,7 +56,6 @@ interface OcrSuggestionsProps {
   suggestion: OcrSuggestion;
   onApplyDate: (date: string) => void;
   onApplyTime: (time: string) => void;
-  onApplyTitle: (title: string) => void;
   onApplyAll: () => void;
   onDismiss: () => void;
 }
@@ -65,14 +64,12 @@ export function OcrSuggestions({
   suggestion,
   onApplyDate,
   onApplyTime,
-  onApplyTitle,
   onApplyAll,
   onDismiss,
 }: OcrSuggestionsProps) {
   const rows = [
     suggestion.date && { label: "Data rilevata", value: suggestion.date, apply: () => onApplyDate(suggestion.date!) },
     suggestion.time && { label: "Orario rilevato", value: suggestion.time, apply: () => onApplyTime(suggestion.time!) },
-    suggestion.title && { label: "Titolo rilevato", value: suggestion.title, apply: () => onApplyTitle(suggestion.title!) },
   ].filter(Boolean) as { label: string; value: string; apply: () => void }[];
 
   if (rows.length === 0) return null;
