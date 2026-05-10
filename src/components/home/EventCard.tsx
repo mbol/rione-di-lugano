@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Clock, ChevronRight, FileText, ImageIcon, Calendar, Info, X } from "lucide-react";
+import { Clock, ChevronRight, FileText, ImageIcon, Calendar, Info, X, Share2, Check } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { formatDay, formatMonth, formatTime, formatFullDate } from "@/lib/format";
 import type { Event } from "@/lib/types";
@@ -49,7 +49,22 @@ function renderWithLinks(text: string): React.ReactNode[] {
 
 export function EventCard({ event, index, linkHref, onOpen }: EventCardProps) {
   const [showDesc, setShowDesc] = useState(false);
+  const [copied, setCopied] = useState(false);
   const Icon = flyerIcons[event.flyerType];
+  const hasFlyer = event.flyerType !== "none" && !!event.flyerUrl;
+
+  async function handleShare(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const url = `${window.location.origin}/${event.category}?id=${event.id}`;
+    if (typeof navigator.share === "function") {
+      await navigator.share({ title: event.title, url }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
   const day = formatDay(event.date);
   const month = formatMonth(event.date);
   const time = formatTime(event.date);
@@ -111,22 +126,32 @@ export function EventCard({ event, index, linkHref, onOpen }: EventCardProps) {
                   )}
                 </div>
 
-                {/* Spacer so content doesn't overlap buttons */}
-                <div className={`flex-shrink-0 ${hasDescription ? "w-16" : "w-7"}`} />
+                {/* Spacer so content doesn't overlap action buttons */}
+                <div className={`flex-shrink-0 ${hasDescription && hasFlyer ? "w-24" : hasDescription || hasFlyer ? "w-16" : "w-7"}`} />
               </div>
             </div>
           </Link>
 
           {/* Action buttons — siblings of Link, absolutely positioned */}
-          <div className="absolute top-1/2 -translate-y-1/2 right-5 sm:right-6 flex items-center gap-1 z-10">
+          <div className="absolute top-1/2 -translate-y-1/2 right-5 sm:right-6 flex items-center gap-1.5 z-10">
             {hasDescription && (
               <button
                 onClick={() => setShowDesc(true)}
                 aria-label="Informazioni aggiuntive"
                 title="Mostra informazioni aggiuntive"
+                className="flex items-center justify-center w-9 h-9 rounded-full text-primary bg-primary/10 hover:bg-primary/20 transition-colors"
+              >
+                <Info className="w-5 h-5" />
+              </button>
+            )}
+            {hasFlyer && (
+              <button
+                onClick={handleShare}
+                aria-label="Condividi locandina"
+                title="Condividi link locandina"
                 className="flex items-center justify-center w-8 h-8 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
               >
-                <Info className="w-4 h-4" />
+                {copied ? <Check className="w-4 h-4 text-green-500" /> : <Share2 className="w-4 h-4" />}
               </button>
             )}
             <ChevronRight className="w-5 h-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all" />

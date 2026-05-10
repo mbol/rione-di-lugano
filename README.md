@@ -125,12 +125,21 @@ Category pages (`/sacramentale`, `/annunci`) support URL-based control over what
 | URL | Behaviour |
 |---|---|
 | `/sacramentale` | Shows the event list |
-| `/sacramentale?open` | Auto-opens the most recent flyer fullscreen |
-| `/sacramentale?id=<eventId>` | Opens that specific event's flyer fullscreen |
+| `/sacramentale?open` | Auto-opens the most recent sacramentale flyer fullscreen |
+| `/sacramentale?id=<eventId>` | Opens that specific sacramentale flyer fullscreen |
+| `/annunci` | Shows the announcements list |
+| `/annunci?open` | Auto-opens the most recent announcement flyer fullscreen |
+| `/annunci?id=<eventId>` | Opens that specific announcement flyer fullscreen |
 
 The **link icon** button in the admin panel copies a `?id=` link for any event with a flyer. Share that URL to send someone directly to a specific flyer.
 
-Use `?open` on the homepage, in emails, or in QR codes to always open the latest document without specifying an ID.
+Use `?open` in emails or QR codes to always open the latest document without specifying an ID, e.g.:
+```
+https://rionelugano.com/sacramentale?open
+https://rionelugano.com/annunci?open
+```
+
+On the public event list, each card with a flyer shows a **share icon**. On mobile it triggers the native share sheet; on desktop it copies the direct link to the clipboard (the icon briefly turns into a checkmark to confirm).
 
 ---
 
