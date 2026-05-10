@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, LogOut, Globe, Calendar, FileText, ImageIcon, Star, Bell, LayoutList } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, Globe, Calendar, FileText, ImageIcon, Star, Bell, LayoutList, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { auth } from "@/lib/firebase";
@@ -229,6 +229,20 @@ export function Dashboard() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
+                          {event.flyerType !== "none" && event.flyerUrl && (
+                            <button
+                              onClick={() => {
+                                const url = `${window.location.origin}/${event.category}?id=${event.id}`;
+                                navigator.clipboard.writeText(url);
+                                toast.success("Link copiato negli appunti.");
+                              }}
+                              className="p-1.5 rounded-md text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-colors"
+                              aria-label="Copia link diretto"
+                              title="Copia link per apertura diretta"
+                            >
+                              <Link2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => openEdit(event)}
                             className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"

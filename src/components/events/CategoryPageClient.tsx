@@ -18,8 +18,10 @@ export function CategoryPageClient({ category }: Props) {
   const [events, setEvents] = useState<Event[]>([]);
   const [ready, setReady] = useState(false);
   const [selectedId, setSelectedId] = useState<string>(() => params.get("id") ?? "");
-  // true only after the user explicitly pressed X to return to the list
-  const [showList, setShowList] = useState(false);
+  // showList starts true unless ?open or ?id= is in the URL
+  const [showList, setShowList] = useState(
+    () => !params.has("open") && !params.get("id")
+  );
 
   useEffect(() => {
     getCategoryEvents(category)
@@ -59,8 +61,9 @@ export function CategoryPageClient({ category }: Props) {
     setShowList(true); // prevent auto-reopen until user navigates away
   };
 
-  // Still loading — black screen (consistent with fullscreen UX)
   if (!ready) {
+    // Only use fullscreen black while loading a flyer; use inline for list view
+    if (showList) return <div className="py-20 text-center text-sm text-gray-400">Caricamento…</div>;
     return <div className="fixed inset-0 bg-black z-50" />;
   }
 
