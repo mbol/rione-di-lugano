@@ -118,7 +118,7 @@ export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
         <button
           onClick={() => setShowDesc((v) => !v)}
           aria-label="Informazioni aggiuntive"
-          className="absolute top-4 left-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+          className="absolute top-4 left-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
         >
           <Info className="w-5 h-5" />
         </button>
@@ -128,7 +128,7 @@ export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
       <button
         onClick={close}
         aria-label="Chiudi"
-        className="absolute top-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+        className="absolute top-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
       >
         <X className="w-5 h-5" />
       </button>
@@ -181,7 +181,7 @@ export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
         <button
           onClick={goLeft}
           aria-label="Locandina precedente"
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -192,7 +192,7 @@ export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
         <button
           onClick={goRight}
           aria-label="Locandina successiva"
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
@@ -250,7 +250,7 @@ export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
             }
           }}
           aria-label="Scarica locandina"
-          className="absolute bottom-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+          className="absolute bottom-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
         >
           <Download className="w-5 h-5" />
         </button>
