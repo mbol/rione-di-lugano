@@ -17,6 +17,7 @@ export function CategoryPageClient({ category }: Props) {
 
   const [events, setEvents] = useState<Event[]>([]);
   const [ready, setReady] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [selectedId, setSelectedId] = useState<string>(() => params.get("id") ?? "");
   // showList starts true unless ?open or ?id= is in the URL
   const [showList, setShowList] = useState(
@@ -24,9 +25,11 @@ export function CategoryPageClient({ category }: Props) {
   );
 
   useEffect(() => {
+    setReady(false);
+    setFetchError(false);
     getCategoryEvents(category)
       .then(setEvents)
-      .catch(() => {})
+      .catch(() => setFetchError(true))
       .finally(() => setReady(true));
   }, [category]);
 
@@ -65,6 +68,27 @@ export function CategoryPageClient({ category }: Props) {
     // Only use fullscreen black while loading a flyer; use inline for list view
     if (showList) return <div className="py-20 text-center text-sm text-gray-400">Caricamento…</div>;
     return <div className="fixed inset-0 bg-black z-50" />;
+  }
+
+  if (fetchError) {
+    return (
+      <div className="py-16 text-center text-muted-foreground space-y-3">
+        <p>Impossibile caricare gli eventi. Controlla la connessione e riprova.</p>
+        <button
+          onClick={() => {
+            setReady(false);
+            setFetchError(false);
+            getCategoryEvents(category)
+              .then(setEvents)
+              .catch(() => setFetchError(true))
+              .finally(() => setReady(true));
+          }}
+          className="text-sm underline underline-offset-2 hover:text-foreground"
+        >
+          Riprova
+        </button>
+      </div>
+    );
   }
 
   // Show fullscreen (auto-first or user-selected)

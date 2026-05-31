@@ -76,15 +76,20 @@ export async function getPublishedEvents(): Promise<Event[]> {
 
 export async function getCategoryEvents(category: Event["category"]): Promise<Event[]> {
   const today = startOfToday().getTime();
-  const events = await getPublishedEvents();
+
+  const q = query(
+    collection(db, "events"),
+    where("published", "==", true),
+    where("category", "==", category)
+  );
+
+  const snapshot = await getDocsFromServer(q);
+  const events = snapshot.docs.map((d) => toEvent(d.id, d.data()));
 
   return sortForCategoryPage(
     events.filter((event) => {
-      if (event.category !== category) return false;
-
       const isTodayOrFuture = event.date.toDate().getTime() >= today;
       if (isTodayOrFuture) return true;
-
       return category === "sacramentale" && hasFlyer(event);
     })
   );
