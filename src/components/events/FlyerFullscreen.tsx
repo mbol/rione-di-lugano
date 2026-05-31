@@ -81,9 +81,13 @@ export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") goLeft();
-      else if (e.key === "ArrowRight") goRight();
-      else if (e.key === "Escape") close();
+      if (e.key === "ArrowLeft") {
+        if (event.flyerType === "pdf" && pdfPage > 1) setPdfPage((p) => p - 1);
+        else goLeft();
+      } else if (e.key === "ArrowRight") {
+        if (event.flyerType === "pdf" && pdfPage < pdfNumPages) setPdfPage((p) => p + 1);
+        else goRight();
+      } else if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -102,8 +106,15 @@ export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
     touchStart.current = null;
 
     if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > THRESHOLD) {
-      if (dx < 0) goRight();
-      else goLeft();
+      if (dx < 0) {
+        // swipe left → next page, or next flyer at last page
+        if (event.flyerType === "pdf" && pdfPage < pdfNumPages) setPdfPage((p) => p + 1);
+        else goRight();
+      } else {
+        // swipe right → prev page, or prev flyer at first page
+        if (event.flyerType === "pdf" && pdfPage > 1) setPdfPage((p) => p - 1);
+        else goLeft();
+      }
     }
   };
 
@@ -113,25 +124,26 @@ export function FlyerFullscreen({ events, initialIndex, onClose }: Props) {
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
-      {/* Info (top-left, mirrors Close) */}
+      {/* Back to list (top-left) */}
+      <button
+        onClick={close}
+        aria-label="Torna alla lista"
+        className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white text-sm font-medium shadow-md transition-colors"
+      >
+        <ChevronLeft className="w-4 h-4 -ml-0.5" />
+        Lista
+      </button>
+
+      {/* Info (top-right) */}
       {event.detailedText?.trim() && (
         <button
           onClick={() => setShowDesc((v) => !v)}
           aria-label="Informazioni aggiuntive"
-          className="absolute top-4 left-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
+          className="absolute top-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
         >
           <Info className="w-5 h-5" />
         </button>
       )}
-
-      {/* Close */}
-      <button
-        onClick={close}
-        aria-label="Chiudi"
-        className="absolute top-4 right-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-black/55 hover:bg-black/75 text-white shadow-md transition-colors"
-      >
-        <X className="w-5 h-5" />
-      </button>
 
       {/* Description overlay */}
       <AnimatePresence>

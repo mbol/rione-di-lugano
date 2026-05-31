@@ -3,6 +3,7 @@ import {
   query,
   where,
   orderBy,
+  getDocs,
   getDocsFromServer,
   doc,
   getDocFromServer,
@@ -59,7 +60,7 @@ export async function getUpcomingEvents(): Promise<Event[]> {
     orderBy("date", "asc")
   );
 
-  const snapshot = await getDocsFromServer(q);
+  const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => toEvent(d.id, d.data()));
 }
 
@@ -70,7 +71,7 @@ export async function getPublishedEvents(): Promise<Event[]> {
     orderBy("date", "asc")
   );
 
-  const snapshot = await getDocsFromServer(q);
+  const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => toEvent(d.id, d.data()));
 }
 
@@ -83,7 +84,7 @@ export async function getCategoryEvents(category: Event["category"]): Promise<Ev
     where("category", "==", category)
   );
 
-  const snapshot = await getDocsFromServer(q);
+  const snapshot = await getDocs(q);
   const events = snapshot.docs.map((d) => toEvent(d.id, d.data()));
 
   return sortForCategoryPage(
